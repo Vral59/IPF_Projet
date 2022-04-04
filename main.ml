@@ -55,39 +55,28 @@ print_string "\n";;
 
 (* Question 3 *)
 
-let rec aux1 stb i = match stb with
+(* retire les caractère d'indices i à la fin du mot *)
+let rec eraseEnd stb i = match stb with
   |Noeud(g,l,d) -> let ld = length_string_builder d in 
-    if i > ld then Noeud(aux1 g (i - ld), l - ld, Feuille("",0))
-    else Noeud(g,l-i,aux1 d i)
+    if i > ld then Noeud(eraseEnd g (i - ld), l - ld, Feuille("",0))
+    else Noeud(g,l-i,eraseEnd d i)
   |Feuille(mot,l) -> Feuille(String.sub mot 0 (l-i),(l-i))
 ;;
 
-let retire = aux1 resultat 3;;
-let motMoins = conca_word retire;;
-
-print_string motMoins;;
-print_string "\n";;
-
-(* Retirer la fin semble fonctionner *)
-
-let rec aux2 stb i = match stb with
-  |Noeud(g,l,d) -> let ld = length_string_builder d in
-    if i < ld then Noeud(Feuille("",0),ld,aux2 d (i-(length_string_builder g)))
-    else Noeud(aux2 g (i-ld),l-i,d)
-  |Feuille(mot,l) -> Feuille(String.sub mot i (l-i),(l-i))
+(* retire les caractères d'indices 0 à i*)
+let rec eraseStart stb i = match stb with
+|Noeud(g,l,d) -> let lg = length_string_builder g in
+  if lg > i then Noeud(eraseStart g i,(l-i),d)
+  else Noeud(Feuille("",0),l-lg-i,eraseStart d (i-lg))
+|Feuille(mot,l) -> Feuille(String.sub mot i (l-i),(l-i))
 ;;
 
-let avant = aux2 exemple1 3;;
-let motMoins1 = conca_word avant;;
-
-print_string motMoins1;;
-print_string "\n";;
-(* Il y a une erreur en retirant le début *)
-
-(* On retire les deux bouts, et on effaces les feuilles vides *)
-let sub_string stb i m = 
-  let debutMoins = aux2 stb i in
-  let finMoins = aux1 debutMoins m in
+(* On retire les deux bouts, et on effaces les feuilles vides créent dans les fonction auxilière (a corriger) *)
+(* Ca fonctionne mais c'est pas propre*)
+let sub_string stb i m =
+  let longueur = length_string_builder stb in 
+  let debutMoins = eraseStart stb i in
+  let finMoins = eraseEnd debutMoins (longueur - i - m) in
   let rec aux stb = match stb with
   |Noeud(Feuille("",0),0,Feuille("",0)) -> Feuille("",0)
   |Noeud(Feuille("",0),l,d) -> aux d
@@ -97,6 +86,11 @@ let sub_string stb i m =
 in aux finMoins
 ;;
 
+let suppression = sub_string resultat 2 4;;
+let string_supp = conca_word suppression;;
+print_string string_supp;;
+print_string "\n";;
+
 (* Question 4 *)
 let cost stb = 
   let rec aux stb cpt = match stb with
@@ -105,3 +99,27 @@ let cost stb =
 in aux stb 0
 ;;
 
+(* Question 8 *)
+
+
+let fonction nmax =
+  let taille = (nmax*(nmax+1))/2 in
+  let tableau = Array.make taille 0 in
+  for i = 1 to nmax do 
+    for j = 0 to (i-1) do 
+      tableau.(((i*(i-1))/2 + j)) <- i;
+      print_int i
+    done;
+  done;
+Random.self_init();
+tableau.(Random.int taille)
+;;
+
+let x = fonction 8;;
+print_string "\n";;
+print_int x;;
+print_string "\n";;
+
+(*
+On va partir du noeud d'origine et créer un nombre aléatoire de fils
+*)
