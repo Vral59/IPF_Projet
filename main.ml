@@ -1,3 +1,5 @@
+Random.self_init();;
+
 (* Question 1 *)
 
 type 'a string_builder = 
@@ -101,25 +103,121 @@ in aux stb 0
 
 (* Question 8 *)
 
-
-let fonction nmax =
-  let taille = (nmax*(nmax+1))/2 in
-  let tableau = Array.make taille 0 in
-  for i = 1 to nmax do 
-    for j = 0 to (i-1) do 
-      tableau.(((i*(i-1))/2 + j)) <- i;
-      print_int i
-    done;
-  done;
-Random.self_init();
-tableau.(Random.int taille)
+(* Fonction puissance en exponentiation rapide *)
+let rec exponentiation x n =
+  if n = 0 then 1
+  else let y = exponentiation x (n/2) in
+  if n mod 2 = 0 then y * y else x * y * y 
 ;;
 
-let x = fonction 8;;
-print_string "\n";;
-print_int x;;
-print_string "\n";;
 
 (*
-On va partir du noeud d'origine et créer un nombre aléatoire de fils
+On colore en rouge (mettre -1) un noeud et après on le fait à tous
 *)
+let create_complet hauteur =
+  let rec aux stb hauteur = match stb with
+    |Feuille(mot,i) when i = hauteur -> Feuille("a",i)
+    |Feuille(mot,i) -> Noeud(aux (Feuille("a",(i+1))) hauteur,i,aux (Feuille("a",(i+1))) hauteur)
+    |Noeud(fg,h,fd) -> Noeud(aux fg hauteur,h,aux fd hauteur)
+in aux (Feuille("a",0)) hauteur
+;;
+
+(* Colori un Noeud ou feuille aléatoire à un hauteur donné *)
+let rec colorer_point stb hauteur = match stb with
+  |Feuille(a,i) -> Feuille("b",-1)
+  |Noeud(fg,h,fd) when h = hauteur -> Noeud(fg,-1,fd) 
+  |Noeud(fg,h,fd) -> let choix = Random.int 2 in 
+      if choix = 1 then Noeud(fg, h, colorer_point fd hauteur) 
+      else Noeud(colorer_point fg hauteur, h, fd)
+;;
+
+(* Colori deux feuilles frères et soeur pour fixer la hauteur à h*)
+let rec colorer_freres stb = match stb with
+|Feuille(mot,a) -> Feuille("b",-1)
+|Noeud(Feuille(ag,cg),h,Feuille(ad,cd)) -> Noeud(Feuille(ag,-1),h,Feuille(ad,-1))
+|Noeud(fg,h,fd) -> let choix = Random.int 2 in 
+if choix = 1 then Noeud(fg, h, colorer_freres fd) 
+else Noeud(colorer_freres fg, h, fd)
+;;
+
+
+(* Colorie un nombre aléatoire de point sur des positions aléatoire*)
+let colorer_arbre stb hauteur = 
+  let nb_a_colorier = Random.int ((exponentiation 2 hauteur) + 2) in
+  let rec aux arbre cpt hauteur = match cpt with
+  |0 -> arbre
+  |i -> aux (colorer_point arbre (Random.int hauteur)) (cpt-1) hauteur
+in aux stb nb_a_colorier hauteur
+;;
+
+(* Sert à compter le nombre de point marqué *)
+let rec verif stb = match stb with
+|Feuille(_,-1) -> 1
+|Feuille(_,a) -> 0
+|Noeud(fg,-1,fd) -> 1 + (verif fg) + (verif fd)
+|Noeud(fg,a,fd) -> 0 + (verif fg) + (verif fd)
+;;
+
+
+(* Sextion de tests *)
+let arbrecomplet = create_complet 5;;
+
+(* Colore une feuille tout en bas et son frère*)
+let res = colorer_freres arbrecomplet;;
+
+let test = conca_word res;;
+print_string test;;
+print_string "\n";;
+let res = colorer_arbre res 5;;
+print_string("Il y a noeud coloré \n");;
+print_int (verif res);;
+print_string "\n";;
+
+(* Colore les points de l'arbre selon des règles précises : 
+Si un enfant est rouge le père est rouge. 
+Si le frère et le père sont rouge alors le point est rouge 
+
+Note : A appliquer plusieurs fois jusqu'à que tout se stabilise 
+*)
+let rec colorisation stb = match stb with
+|Noeud(Noeud(fgg,hg,fgd),-1,Noeud(fdg,hd,fdd)) -> if hg = -1 
+  then Noeud(colorisation (Noeud(fgg,hg,fgd)),-1,colorisation (Noeud(fdg,-1,fdd)))
+  else if hd = -1 
+  then Noeud(colorisation (Noeud(fgg,-1,fgd)),-1,colorisation (Noeud(fdg,hd,fdd)))
+  else Noeud(colorisation (Noeud(fgg,hg,fgd)),-1,colorisation (Noeud(fdg,hd,fdd)))
+|Noeud(Feuille(m1,lg),-1,Feuille(m2,ld)) -> if lg = -1
+  then Noeud(Feuille(m1,lg),-1,Feuille(m2,-1))
+  else if ld = -1
+  then Noeud(Feuille(m1,-1),-1,Feuille(m2,ld))
+  else Noeud(Feuille(m1,lg),-1,Feuille(m2,ld))
+|Noeud(fg,h,fd) -> let couleureG = length_string_builder fg in
+  let couleureD = length_string_builder fd in
+  if (couleureG = -1) || (couleureD = -1) then Noeud(colorisation fg,-1,colorisation fd)
+  else Noeud(colorisation fg,h,colorisation fd)
+|Feuille(mot,l) -> Feuille(mot,l)
+
+(* On applique la colorisation jusqu'à que tout ce qui pouvait être coloré le soit *)
+let colorisation_total stb = 
+  let rec aux arbre ancien nouveau = match ancien,nouveau with
+  |a,n when a = n -> arbre
+  |a,n -> let nouveauStb = colorisation arbre in  aux nouveauStb n (verif nouveauStb)
+  in aux stb 0 (verif stb)
+;;
+
+(* Session de test *)
+let totalC = colorisation_total res;;
+print_string ("Il y a au final un nombre de noeud coloré egale à : \n");;
+let nbtotalC = verif totalC;;
+print_int nbtotalC;;
+print_string "\n";;
+
+(* On supprime tous les points non colorié *)
+let rec suppression_non_r stb = match stb with
+|Feuille(mot,h) -> Feuille(mot,h)
+|Noeud(Feuille("",hg),-1,Feuille("",hd)) -> if hg = -1 then Noeud(Feuille("",hg),-1,Feuille("",hd)) (* D'après la colorisation si hg = -1 alors ici hd = -1*)
+  else Feuille("",-1)  
+|Noeud(fg,-1,fd) -> Noeud(suppression_non_r fg, -1, suppression_non_r fd)
+|Noeud(fg,h,fd) -> Feuille("a",-1)
+;;
+
+let arbreFinal = suppression_non_r totalC;;
