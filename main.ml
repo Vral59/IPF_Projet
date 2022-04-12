@@ -118,13 +118,21 @@ let rec verif stb = match stb with
 |Noeud(fg,a,fd) -> 0 + (verif fg) + (verif fd)
 ;;
 
+(* Donne un string aléatoire A REFAIRE*)
+let gen_passwd length =
+  let gen() = match Random.int(26+26+10) with
+      n when n < 26 -> int_of_char 'a' + n
+    | n when n < 26 + 26 -> int_of_char 'A' + n - 26
+    | n -> int_of_char '0' + n - 26 - 26 in
+  let gen _ = String.make 1 (char_of_int(gen())) in
+  String.concat "" (Array.to_list (Array.init length gen));;
 
 (* Colore les points de l'arbre selon des règles précises : 
 Si un enfant est rouge le père est rouge. 
 Si le frère et le père sont rouge alors le point est rouge 
 
 Note : A appliquer plusieurs fois jusqu'à que tout se stabilise 
-*)
+
 let rec colorisation stb = match stb with
 |Noeud(Noeud(fgg,hg,fgd),-1,Noeud(fdg,hd,fdd)) -> if hg = -1 
   then Noeud(colorisation (Noeud(fgg,hg,fgd)),-1,colorisation (Noeud(fdg,-1,fdd)))
@@ -150,14 +158,16 @@ let colorisation_total stb =
   in aux stb 0 (verif stb)
 ;;
 
+*)
 
 (* On supprime tous les points non colorié *)
 let rec suppression_non_r stb = match stb with
-|Feuille(mot,h) -> Feuille(mot,h)
-|Noeud(Feuille("",hg),-1,Feuille("",hd)) -> if hg = -1 then Noeud(Feuille("",hg),-1,Feuille("",hd)) (* D'après la colorisation si hg = -1 alors ici hd = -1*)
-  else Feuille("",-1)  
+|Noeud(Feuille(mot1,hg),-1,Feuille(mot2,hd)) -> if hg = -1 then let len1 = (1 + Random.int 4) in let len2 = (1 + Random.int 4) in
+  Noeud(Feuille(gen_passwd len1,len1),-1,Feuille(gen_passwd len2,len2)) (* D'après la colorisation si hg = -1 alors ici hd = -1*)
+  else let len = (1 + Random.int 4) in Feuille(gen_passwd len,len)  
 |Noeud(fg,-1,fd) -> Noeud(suppression_non_r fg, -1, suppression_non_r fd)
-|Noeud(fg,h,fd) -> Feuille("a",-1)
+|Noeud(fg,h,fd) -> let len = (1 + Random.int 4) in Feuille(gen_passwd len, len)
+|Feuille(mot,h) -> let len = (1 + Random.int 4) in Feuille(gen_passwd len,len)
 ;;
 
 
@@ -174,7 +184,7 @@ let create_complet2 hauteur =
     |Noeud(fg,h,fd) -> let choix = Random.int proba in
     if choix = 0 then Noeud(aux fg hauteur (acc+1) proba,-1,aux fd hauteur (acc+1) proba)
     else Noeud(aux fg hauteur (acc+1) proba,0,aux fd hauteur (acc+1) proba)
-in aux (Feuille("a",0)) hauteur 0 ((Random.int 10) + 2)
+in aux (Feuille("a",0)) hauteur 0 ((Random.int 15) + 2)
 ;;
 (* Note : on va tirer a hasard la probabilité d'être coloré permet d'homogénéiser l'arbre*)
 
@@ -192,8 +202,52 @@ let tmp = colorier_base tree2;;
 print_string ("Autre méthode : \n");;
 print_int (verif tmp);;
 print_string "\n";;
-let tmp = colorisation_total tmp;;
-print_string ("Après colorisation total : \n");;
-print_int (verif tmp);;
+
+let change_c stb = match stb with
+|Feuille(m,i) -> Feuille(m,-1)
+|Noeud(g,i,d)-> Noeud(g,-1,d)
+;;
+
+let get_color stb = match stb with
+|Feuille(m,i) -> i
+|Noeud(g,i,d) -> i
+;;
+
+let rec colorisation arbre = match arbre with
+| Noeud(g,h,d) -> 
+  let fg  = colorisation g in
+  let fd = colorisation d in
+  let ig = get_color fg in
+  let id = get_color fd in
+  if ig = -1 || id = -1 then Noeud(change_c fg,-1, change_c fd)
+  else Noeud(fg,h,fd)
+|Feuille(mot,h) -> Feuille(mot,h)
+;;
+
+let tmp2 = colorisation tmp;;
+print_string "Après colorisation 2 total : \n";;
+print_int (verif tmp2);;
 print_string "\n";;
-let tmp = suppression_non_r tmp;;
+let tmp2 = suppression_non_r tmp2;;
+let mot = conca_word tmp2;;
+print_string mot;;
+print_string "\n";;
+
+
+(* Question 6 *)
+
+let rec list_of_string stb = match stb with 
+|Feuille(mot,_) -> [mot]
+|Noeud(fg,_,fd) -> (list_of_string) fg @ (list_of_string fd)
+;;
+
+open Printf;;
+let liste = list_of_string exemple1;;
+let () = List.iter (printf "%s ") liste;;
+print_string "\n";;
+
+let listeR = list_of_string tmp2;;
+let () = List.iter (printf "%s ") listeR;;
+print_string "\n";;
+
+(* Question 7 *)
