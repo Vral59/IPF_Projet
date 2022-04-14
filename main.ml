@@ -8,6 +8,26 @@ type 'a string_builder =
 | Noeud of ('a string_builder) * int * ('a string_builder)
 
 
+(* ----- Fonctions Bonus ----- *)
+
+(* Transorme un mot en une feuille *)
+let word mot = Feuille(mot,String.length mot);;
+
+(* Retourne la longueur de le chaine de caractère *)
+let length_string_builder stb = match stb with
+|Noeud(filg,longueur,fild) -> longueur
+|Feuille(mot,longueur) -> longueur
+;; 
+
+(* Retourne la hateur d'un stb *)
+let rec hauteur_stb stb = match stb with
+|Feuille(_,_) -> 1
+|Noeud(g,i,d) -> 1 + (max (hauteur_stb g) (hauteur_stb d))
+;;
+
+(* ----- Fin Fonctions Bonus ----- *)
+
+
 (* concataine 2 string_builder, idée :  aller le plus en bas à droite *)
 let rec concat stb1 stb2 = Noeud(stb1,(length_string_builder stb1) + (length_string_builder stb2), stb2);;
 
@@ -167,7 +187,7 @@ let random_string i =
   let arbre = colorisation arbre in
   suppression_non_r arbre
 ;;
-
+(* NOTE IL N'Y A PAS LES BONNES TAILLES SUR LES NOEUDS *)
 
 (* ----- Question 6 ----- *)
 
@@ -260,25 +280,6 @@ let gain_balance n h =
   res.(5) <- !minimum2;
   res;;
 (* Note : Faire la médiane *)
-
-(* ----- Fonctions Bonus ----- *)
-
-(* Transorme un mot en une feuille *)
-let word mot = Feuille(mot,String.length mot);;
-
-(* Retourne la longueur de le chaine de caractère *)
-let length_string_builder stb = match stb with
-|Noeud(filg,longueur,fild) -> longueur
-|Feuille(mot,longueur) -> longueur
-;; 
-
-(* Retourne la hateur d'un stb *)
-let rec hauteur_stb stb = match stb with
-|Feuille(_,_) -> 1
-|Noeud(g,i,d) -> 1 + (max (hauteur_stb g) (hauteur_stb d))
-;;
-
-(* ----- Fin Fonctions Bonus ----- *)
 
 
 (* ------ TEST ----- *)
