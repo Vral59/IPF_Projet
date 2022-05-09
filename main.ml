@@ -7,11 +7,7 @@ type 'a string_builder =
 | Feuille of 'a * int
 | Noeud of ('a string_builder) * int * ('a string_builder)
 
-
 (* ----- Fonctions Bonus ----- *)
-
-(* Transorme un mot en une feuille *)
-let word mot = Feuille(mot,String.length mot);;
 
 (* Retourne la longueur de le chaine de caractère *)
 let length_string_builder stb = match stb with
@@ -20,26 +16,24 @@ let length_string_builder stb = match stb with
 ;; 
 
 (* Retourne la hateur d'un stb *)
-let rec hauteur_stb stb = match stb with
-|Feuille(_,_) -> 1
-|Noeud(g,i,d) -> 1 + (max (hauteur_stb g) (hauteur_stb d))
+let rec height_stb stb = match stb with
+|Feuille(_,_) -> 0
+|Noeud(g,i,d) -> 1 + (max (height_stb g) (height_stb d))
 ;;
+
 
 (* ----- Fin Fonctions Bonus ----- *)
 
+(* Suite Question 1 *)
+let word mot = Feuille(mot,String.length mot);;
 
-(* concataine 2 string_builder, idée :  aller le plus en bas à droite *)
+(* concataine 2 string_builder *)
 let rec concat stb1 stb2 = Noeud(stb1,(length_string_builder stb1) + (length_string_builder stb2), stb2);;
 
 
-(* Transforme un string_builder en un string inutile pour le moment *)
-let rec conca_word stb = match stb with
-|Feuille(mot,longueur) -> mot 
-|Noeud(filsg,longueur,filsd) -> (conca_word filsg)^(conca_word filsd)
-;;
-
-
 (* ----- Question 2 ----- *)
+
+(* Renvoie le ième caractère du string_builder *)
 let rec char_at stb i = match stb with
   |Noeud(g, l, d) -> let lg = length_string_builder g in
     if i < lg then char_at g i
@@ -51,18 +45,18 @@ let rec char_at stb i = match stb with
 (* ----- Question 3 ----- *)
 
 (* retire les caractère d'indices i à la fin du mot *)
-let rec eraseEnd stb i = match stb with
+let rec erase_end stb i = match stb with
   |Noeud(g,l,d) -> let ld = length_string_builder d in 
-    if i > ld then Noeud(eraseEnd g (i - ld), l - ld, Feuille("",0))
-    else Noeud(g,l-i,eraseEnd d i)
+    if i > ld then Noeud(erase_end g (i - ld), l - ld, Feuille("",0))
+    else Noeud(g,l-i,erase_end d i)
   |Feuille(mot,l) -> Feuille(String.sub mot 0 (l-i),(l-i))
 ;;
 
 (* retire les caractères d'indices 0 à i*)
-let rec eraseStart stb i = match stb with
+let rec erase_start stb i = match stb with
 |Noeud(g,l,d) -> let lg = length_string_builder g in
-  if lg > i then Noeud(eraseStart g i,(l-i),d)
-  else Noeud(Feuille("",0),l-lg-i,eraseStart d (i-lg))
+  if lg > i then Noeud(erase_start g i,(l-i),d)
+  else Noeud(Feuille("",0),l-lg-i,erase_start d (i-lg))
 |Feuille(mot,l) -> Feuille(String.sub mot i (l-i),(l-i))
 ;;
 
@@ -70,14 +64,14 @@ let rec eraseStart stb i = match stb with
 (* Ca fonctionne mais c'est pas propre*)
 let sub_string stb i m =
   let longueur = length_string_builder stb in 
-  let debutMoins = eraseStart stb i in
-  let finMoins = eraseEnd debutMoins (longueur - i - m) in
+  let debutMoins = erase_start stb i in
+  let finMoins = erase_end debutMoins (longueur - i - m) in
   let rec aux stb = match stb with
+  |Feuille(m,l) -> Feuille(m,l)
   |Noeud(Feuille("",0),0,Feuille("",0)) -> Feuille("",0)
   |Noeud(Feuille("",0),l,d) -> aux d
   |Noeud(g,l,Feuille("",0)) -> aux g
   |Noeud(g,l,d) -> Noeud(aux g,l,aux d)
-  |Feuille(m,l) -> Feuille(m,l)
 in aux finMoins
 ;;
 
@@ -89,28 +83,14 @@ let cost stb =
   let rec aux stb cpt = match stb with
   |Feuille(mot,l) -> l*cpt
   |Noeud(g,l,d) -> (aux g (cpt+1)) + (aux d (cpt+1))
-in aux stb 0
+in aux stb 1
 ;;
 
 (* ----- Question 5 ----- *)
 
-(* Fonction puissance en exponentiation rapide *)
-let rec exponentiation x n =
-  if n = 0 then 1
-  else let y = exponentiation x (n/2) in
-  if n mod 2 = 0 then y * y else x * y * y 
-;;
-
-(* Sert à compter le nombre de point marqué *)
-let rec verif stb = match stb with
-|Feuille(_,-1) -> 1
-|Feuille(_,a) -> 0
-|Noeud(fg,-1,fd) -> 1 + (verif fg) + (verif fd)
-|Noeud(fg,a,fd) -> 0 + (verif fg) + (verif fd)
-;;
 
 (* Donne un string aléatoire A REFAIRE*)
-let gen_passwd length =
+let gen_random_str length =
   let gen() = match Random.int(26+26+10) with
       n when n < 26 -> int_of_char 'a' + n
     | n when n < 26 + 26 -> int_of_char 'A' + n - 26
@@ -121,18 +101,18 @@ let gen_passwd length =
 
 
 (* On supprime tous les points non colorié et on met dans les feuilles de string aléatoire *)
-let rec suppression_non_r stb = match stb with
+let rec erase_uncolor stb = match stb with
 |Noeud(Feuille(mot1,hg),-1,Feuille(mot2,hd)) -> if hg = -1 then let len1 = (1 + Random.int 4) in let len2 = (1 + Random.int 4) in
-  Noeud(Feuille(gen_passwd len1,len1),-1,Feuille(gen_passwd len2,len2)) (* D'après la colorisation si hg = -1 alors ici hd = -1*)
-  else let len = (1 + Random.int 4) in Feuille(gen_passwd len,len)  
-|Noeud(fg,-1,fd) -> Noeud(suppression_non_r fg, -1, suppression_non_r fd)
-|Noeud(fg,h,fd) -> let len = (1 + Random.int 4) in Feuille(gen_passwd len, len)
-|Feuille(mot,h) -> let len = (1 + Random.int 4) in Feuille(gen_passwd len,len)
+  Noeud(Feuille(gen_random_str len1,len1),-1,Feuille(gen_random_str len2,len2)) (* D'après la colorisation si hg = -1 alors ici hd = -1*)
+  else let len = (1 + Random.int 4) in Feuille(gen_random_str len,len)  
+|Noeud(fg,-1,fd) -> Noeud(erase_uncolor fg, -1, erase_uncolor fd)
+|Noeud(fg,h,fd) -> let len = (1 + Random.int 4) in Feuille(gen_random_str len, len)
+|Feuille(mot,h) -> let len = (1 + Random.int 4) in Feuille(gen_random_str len,len)
 ;;
 
 
 (* On créé l'arbre en placant les couleurs dès le départ *)
-let create_complet2 hauteur =
+let create_complet hauteur =
   let rec aux stb hauteur acc  proba = match stb with
     |Feuille(mot,i) when acc = hauteur -> 
       let choix = Random.int proba in 
@@ -144,17 +124,17 @@ let create_complet2 hauteur =
     |Noeud(fg,h,fd) -> let choix = Random.int proba in
     if choix = 0 then Noeud(aux fg hauteur (acc+1) proba,-1,aux fd hauteur (acc+1) proba)
     else Noeud(aux fg hauteur (acc+1) proba,0,aux fd hauteur (acc+1) proba)
-in aux (Feuille("a",0)) hauteur 0 ((Random.int 20) + 2)
+in aux (Feuille("a",0)) hauteur 0 ((Random.int 20) + hauteur)
 ;;
 (* Note : on va tirer au hasard la probabilité d'être coloré permet d'homogénéiser l'arbre*)
 
 (* On s'assure d'avoir la base de l'arbre colorié *)
-let rec colorier_base arbre  = match arbre with
+let rec color_base arbre  = match arbre with
   |Feuille(mot,h) -> Feuille(mot,-1)
   |Noeud(Feuille(mot1,h1),h,Feuille(mot2,h2)) -> Noeud(Feuille(mot1,-1),h,Feuille(mot2,-1))
   |Noeud(fg,h,fd) -> let choix = Random.int 2 in 
-  if choix = 1 then Noeud(fg, h, colorier_base fd) 
-  else Noeud(colorier_base fg, h, fd)
+  if choix = 1 then Noeud(fg, h, color_base fd) 
+  else Noeud(color_base fg, h, fd)
 ;;
 
 
@@ -180,14 +160,24 @@ let rec colorisation arbre = match arbre with
 |Feuille(mot,h) -> Feuille(mot,h)
 ;;
 
-
-let random_string i = 
-  let arbre = create_complet2 i in
-  let arbre = colorier_base arbre in
-  let arbre = colorisation arbre in
-  suppression_non_r arbre
+(* Change les couleurs en les bonnes longueurs de string sur les noeuds *)
+let rec set_length stb = match stb with
+|Noeud(g,h,d) -> 
+  let fg = set_length g in
+  let fd = set_length d in
+  Noeud(fg,(length_string_builder fg) + (length_string_builder fd), fd)
+|Feuille(mot,h) -> Feuille(mot,h)
 ;;
-(* NOTE IL N'Y A PAS LES BONNES TAILLES SUR LES NOEUDS *)
+
+(* Crée un string_builder aléatoire de hauteur i *)
+let random_string i = 
+  let arbre = create_complet i in
+  let arbre = color_base arbre in
+  let arbre = colorisation arbre in
+  let arbre = erase_uncolor arbre in
+  set_length arbre
+;;
+
 
 (* ----- Question 6 ----- *)
 
@@ -200,10 +190,6 @@ let rec list_of_string stb = match stb with
 
 (* ----- Question 7 ----- *)
 
-(* Retourne le minimum d'une liste *)
-let min_list lst =
-	List.fold_left (fun a b -> if a < b then a else b) (List.hd lst) lst
-;;
 
 (* Créer la liste des couts*)
 let rec create_cost_list liste = match liste with
@@ -212,12 +198,14 @@ let rec create_cost_list liste = match liste with
 |_ -> failwith "Situattion innatendu"
 ;;
 
-(* renvoie l'indice dans la liste du premier éléments qui va être fusionner *)
-let rec find_min listeCost minCost = match listeCost with
-|t::q when t = minCost-> 0
-|t::q -> 1 + (find_min q minCost)
-|_ -> failwith "Min pas dans la liste"
-;; 
+(* Renvoie l'indice du premier élément à fusionner *)
+let find_min listeCost = 
+  let rec aux listeCost position minCost indice= match listeCost with
+  |[] -> indice
+  |t::q when t < minCost -> aux q (position+1) t position
+  |t::q -> aux q (position+1) minCost indice
+in aux listeCost 0 max_int 0
+;;
 
 (* Fusionne la paire d'indice i et i+i *)
 let fusion liste indice = 
@@ -240,8 +228,7 @@ let balance stb =
   let n = List.length !liste in
   for i = 0 to (n-2) do
     let listeC = create_cost_list !liste in
-    let minCost = min_list listeC in
-    let indice = find_min listeC minCost in
+    let indice = find_min listeC in
     liste := fusion !liste indice
   done;
   List.hd !liste
@@ -250,7 +237,7 @@ let balance stb =
 
 (* ----- Question 8 ----- *)
 
-(* Prend un nombre d'arbre à générer et la hateur de chaque arbre *)
+(* Prend un nombre d'arbre à générer et la hauteur de chaque arbre pour faire des calcules de gains et pertes*)
 let gain_balance n h = 
   let tableau = Array.make n h in
   let tableau_stb = Array.map random_string tableau in
@@ -263,7 +250,7 @@ let gain_balance n h =
   let maximum2 = ref min_int in
   let somme1 = ref 0 in
   let somme2 = ref 0 in
-  let res = Array.make 6 0 in
+  let res = Array.make 3 0 in
   for i = 0 to n-1 do
     somme1 := !somme1 + tableauC.(i);
     somme2 := !somme2 + tableauCBal.(i);
@@ -272,76 +259,9 @@ let gain_balance n h =
     if tableauCBal.(i) < !minimum2 then minimum2 := tableauCBal.(i);
     if tableauCBal.(i) > !maximum2 then maximum2 := tableauCBal.(i)
   done;
-  res.(0) <- !somme1 / n;
-  res.(1) <- !somme2 / n;
-  res.(2) <- !maximum1;
-  res.(3) <- !maximum2;
-  res.(4) <- !minimum1;
-  res.(5) <- !minimum2;
+  res.(0) <- (!somme1 / n) - (!somme2 / n);
+  res.(1) <- !maximum1 - !maximum2;
+  res.(2) <- !minimum1 - !minimum2 ;
   res;;
 (* Note : Faire la médiane *)
 
-
-(* ------ TEST ----- *)
-
-let exemple1 = Noeud(Feuille("G",1),7,Noeud(Feuille("ATT",3),6,Noeud(Feuille("A",1),3,Feuille("CA",2))));;
-
-let exemple2 = word "Oui";;
-let resultat = concat exemple1 exemple2;;
-
-let mot = conca_word resultat;;
-print_string mot;;
-print_string "\n";;
-
-let char1 = char_at resultat 4;;
-let char2 = char_at resultat 7;;
-
-print_char char1;;
-print_string "\n";;
-print_char char2;;
-print_string "\n";;
-
-let suppression = sub_string resultat 2 4;;
-let string_supp = conca_word suppression;;
-print_string string_supp;;
-print_string "\n";;
-
-let liste = list_of_string exemple1;;
-let () = List.iter (printf "%s ") liste;;
-print_string "\n";;
-
-
-let balanceEx1 = balance exemple1;;
-let liste = list_of_string balanceEx1;;
-let () = List.iter (printf "%s ") liste;;
-print_string "\n";;
-
-
-print_int (hauteur_stb exemple1);;
-print_string "\n";;
-print_int (hauteur_stb balanceEx1);;
-print_string "\n";;
-
-let res = gain_balance 100 11;;
-
-print_string "Moyenne sans balance :  ";;
-print_int res.(0);;
-print_string "\n";;
-print_string "Moyenne avec balance :  ";;
-print_int res.(1);;
-print_string "\n";;
-print_string "Maximum sans balance :  ";;
-print_int res.(2);;
-print_string "\n";;
-print_string "Maximum avec balance :  ";;
-print_int res.(3);;
-print_string "\n";;
-print_string "Minimum sans balance :  ";;
-print_int res.(5);;
-print_string "\n";;
-print_string "Minimum avec balance :  ";;
-print_int res.(5);;
-print_string "\n";;
-
-
-(* ------ FIN TEST ----- *)
