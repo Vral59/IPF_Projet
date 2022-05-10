@@ -111,7 +111,7 @@ let rec erase_uncolor stb = match stb with
 ;;
 
 
-(* On créé l'arbre en placant les couleurs dès le départ *)
+(* On créé l'arbre en placant les couleurs aléatoire dès le départ *)
 let create_complet hauteur =
   let rec aux stb hauteur acc  proba = match stb with
     |Feuille(mot,i) when acc = hauteur -> 
@@ -126,7 +126,7 @@ let create_complet hauteur =
     else Noeud(aux fg hauteur (acc+1) proba,0,aux fd hauteur (acc+1) proba)
 in aux (Feuille("a",0)) hauteur 0 ((Random.int 20) + hauteur)
 ;;
-(* Note : on va tirer au hasard la probabilité d'être coloré permet d'homogénéiser l'arbre*)
+
 
 (* On s'assure d'avoir la base de l'arbre colorié *)
 let rec color_base arbre  = match arbre with
@@ -222,7 +222,7 @@ let rec list_of_Feuille stb = match stb with
 |Noeud(fg,_,fd) -> (list_of_Feuille fg) @ (list_of_Feuille fd)
 ;;
 
-(* Equilibre un string_builder selon  l'algorithme proposé *)
+(* Equilibre un string_builder selon l'algorithme proposé *)
 let balance stb = 
   let liste = ref (list_of_Feuille stb) in
   let n = List.length !liste in
@@ -237,6 +237,12 @@ let balance stb =
 
 (* ----- Question 8 ----- *)
 
+(* Fonction de comparaion afin de trier l'arbre *)
+let cmp x y = 
+  if x = y then 0
+  else if x > y then 1 else -1
+;;
+
 (* Prend un nombre d'arbre à générer et la hauteur de chaque arbre pour faire des calcules de gains et pertes*)
 let gain_balance n h = 
   let tableau = Array.make n h in
@@ -250,7 +256,7 @@ let gain_balance n h =
   let maximum2 = ref min_int in
   let somme1 = ref 0 in
   let somme2 = ref 0 in
-  let res = Array.make 3 0 in
+  let res = Array.make 4 0 in
   for i = 0 to n-1 do
     somme1 := !somme1 + tableauC.(i);
     somme2 := !somme2 + tableauCBal.(i);
@@ -259,9 +265,11 @@ let gain_balance n h =
     if tableauCBal.(i) < !minimum2 then minimum2 := tableauCBal.(i);
     if tableauCBal.(i) > !maximum2 then maximum2 := tableauCBal.(i)
   done;
+  Array.stable_sort cmp tableauC;
+  Array.stable_sort cmp tableauCBal;
   res.(0) <- (!somme1 / n) - (!somme2 / n);
   res.(1) <- !maximum1 - !maximum2;
   res.(2) <- !minimum1 - !minimum2 ;
+  res.(3) <- tableauC.(n/2) - tableauCBal.(n/2); 
   res;;
-(* Note : Faire la médiane *)
 
