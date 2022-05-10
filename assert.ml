@@ -44,11 +44,11 @@ let ()  = assert (list_of_string exemple3 = ["petitmot"]);;
 (* Test Question 7 *)
 
 let () = assert(balance exemple1 = Noeud( Noeud (Feuille("G",1),4,Feuille("ATT",3)),7,Noeud(Feuille("A",1),3,Feuille("CA",2))));;
-
+let () = assert(balance exemple3 = exemple3)
 (* Test Question 8 *)
 
-(* TODO
 
+(*
 let res = gain_balance 100 10;;
 
 print_string "Différence de moyenne sans balance - avec balance :  ";;
@@ -59,5 +59,8 @@ print_int res.(1);;
 print_string "\n";;
 print_string "Différence de minimum  :  ";;
 print_int res.(2);;
+print_string "\n";;
+print_string "Différence des médianes  :  ";;
+print_int res.(3);;
 print_string "\n";;
 *)
