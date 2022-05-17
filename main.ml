@@ -89,12 +89,11 @@ in aux stb 1
 (* ----- Question 5 ----- *)
 
 
-(* Donne un string aléatoire A REFAIRE*)
+(* Donne un string aléatoire *)
 let gen_random_str length =
-  let gen() = match Random.int(26+26+10) with
+  let gen() = match Random.int(26+26) with
       n when n < 26 -> int_of_char 'a' + n
-    | n when n < 26 + 26 -> int_of_char 'A' + n - 26
-    | n -> int_of_char '0' + n - 26 - 26 in
+    | n -> int_of_char 'A' + n - 26 in 
   let gen _ = String.make 1 (char_of_int(gen())) in
   String.concat "" (Array.to_list (Array.init length gen))
 ;;
@@ -224,52 +223,98 @@ let rec list_of_Feuille stb = match stb with
 
 (* Equilibre un string_builder selon l'algorithme proposé *)
 let balance stb = 
-  let liste = ref (list_of_Feuille stb) in
-  let n = List.length !liste in
-  for i = 0 to (n-2) do
-    let listeC = create_cost_list !liste in
-    let indice = find_min listeC in
-    liste := fusion !liste indice
-  done;
-  List.hd !liste
+  let liste = list_of_Feuille stb in
+  let rec aux liste = match liste with
+  |[t] -> t
+  |t::q -> let liste_cost = create_cost_list liste in
+          let indice = find_min liste_cost in
+          aux (fusion liste indice)
+  |_ -> failwith "Liste vide"
+in aux liste;;
 ;;
 
 
 (* ----- Question 8 ----- *)
 
-(* Fonction de comparaion afin de trier l'arbre *)
-let cmp x y = 
-  if x = y then 0
-  else if x > y then 1 else -1
+(* Renvoie la somme des éléments d'une liste*)
+let rec somme liste = match liste with
+|[]->0
+|t::q -> t+ somme q
+;;
+(* Renvoie le maximum d'une liste*)
+let rec maximum liste = match liste with
+|[] -> min_int
+|t::q -> max t (maximum q)
+;;
+(* Renvoie le minimum d'une liste *)
+let rec minimum liste = match liste with
+|[] -> max_int
+|t::q -> min t (minimum q)
+;;
+
+(* Créer une liste de n random_string de hauteur h*)
+let rec creer_liste_random_stb n h = match n with
+  |0 -> []
+  |k -> (random_string h)::(creer_liste_random_stb (n-1) h)
+;;
+
+let rec division liste=
+    match liste with
+    |[]->[],[]
+    |a::[]->liste,[]
+    |a::b::c->
+        let (l1,l2)=division c in
+        a::l1,b::l2;;
+
+
+let rec fusion liste1 liste2=
+    match liste1,liste2 with
+    |[],_->liste2;
+    |_,[]->liste1;
+    |t1::q1,t2::q2->
+        if t1<t2 then
+            t1::(fusion q1 liste2)
+        else
+            t2::(fusion liste1 q2);;
+
+
+(* Tri fusion d'une liste *)
+let rec tri_fusion liste=
+    match liste with
+    |[]->[];
+    |a::[]->liste;
+    |_ ->
+        begin
+            let (liste1,liste2)=division liste in
+            fusion (tri_fusion(liste1)) (tri_fusion(liste2));
+        end;;
+
+(* Renvoie la médiane d'une liste *)
+let mediane liste =
+  let liste_triee = tri_fusion liste in
+  let l = List.length liste in
+  let rec aux liste l k = match liste with
+  |[t] -> t
+  |t1::t2::q when l/2 = k -> if l mod 2 = 0 then (t1 +t2)/2 else t1
+  |t::q -> aux q l (k+1)
+  |_ -> failwith "Liste vide erreur"
+in aux liste_triee l 0
+;;
+
+(* Fait la différence terme par terme des éléments de deux listes de même tailles *)
+let rec substraction_list list1 list2 = match list1,list2 with
+|[t1],[t2] -> [t1-t2]
+|t1::q1,t2::q2 -> (t1-t2)::(substraction_list q1 q2)
+|_,_ -> failwith "Liste vide ou de tailles différentes"
 ;;
 
 (* Prend un nombre d'arbre à générer et la hauteur de chaque arbre pour faire des calcules de gains et pertes*)
 let gain_balance n h = 
-  let tableau = Array.make n h in
-  let tableau_stb = Array.map random_string tableau in
-  let tableauC = Array.map cost tableau_stb in
-  let tableau_stb = Array.map balance tableau_stb in
-  let tableauCBal = Array.map cost tableau_stb in 
-  let minimum1 = ref max_int in
-  let maximum1 = ref min_int in
-  let minimum2 = ref max_int in
-  let maximum2 = ref min_int in
-  let somme1 = ref 0 in
-  let somme2 = ref 0 in
-  let res = Array.make 4 0 in
-  for i = 0 to n-1 do
-    somme1 := !somme1 + tableauC.(i);
-    somme2 := !somme2 + tableauCBal.(i);
-    if tableauC.(i) < !minimum1 then minimum1 := tableauC.(i);
-    if tableauC.(i) > !maximum1 then maximum1 := tableauC.(i);
-    if tableauCBal.(i) < !minimum2 then minimum2 := tableauCBal.(i);
-    if tableauCBal.(i) > !maximum2 then maximum2 := tableauCBal.(i)
-  done;
-  Array.stable_sort cmp tableauC;
-  Array.stable_sort cmp tableauCBal;
-  res.(0) <- (!somme1 / n) - (!somme2 / n);
-  res.(1) <- !maximum1 - !maximum2;
-  res.(2) <- !minimum1 - !minimum2 ;
-  res.(3) <- tableauC.(n/2) - tableauCBal.(n/2); 
-  res;;
+  let listeStb = creer_liste_random_stb n h in
+  let listeC = List.map cost listeStb in
+  let listeStb = List.map balance listeStb in
+  let listeCBal = List.map cost listeStb in
+  let listeFinal = substraction_list listeC listeCBal in
+[(somme listeFinal)/ n;maximum listeFinal;minimum listeFinal;mediane listeFinal]
+;;
 
