@@ -47,20 +47,8 @@ let () = assert(balance exemple1 = Noeud( Noeud (Feuille("G",1),4,Feuille("ATT",
 let () = assert(balance exemple3 = exemple3)
 (* Test Question 8 *)
 
-
 (*
 let res = gain_balance 100 10;;
 
-print_string "Différence de moyenne sans balance - avec balance :  ";;
-print_int res.(0);;
-print_string "\n";;
-print_string "Différence de maximum :  ";;
-print_int res.(1);;
-print_string "\n";;
-print_string "Différence de minimum  :  ";;
-print_int res.(2);;
-print_string "\n";;
-print_string "Différence des médianes  :  ";;
-print_int res.(3);;
-print_string "\n";;
+let () = List.iter (printf "%d ") res
 *)
